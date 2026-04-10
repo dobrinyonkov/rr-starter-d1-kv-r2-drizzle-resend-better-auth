@@ -2,7 +2,7 @@
 
 Everything you need to build a full-stack app on Cloudflare Workers.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/dobrinyonkov/starter)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/dobrinyonkov/rr-starter-d1-kv-r2-drizzle-resend-better-auth)
 
 ## Stack
 
