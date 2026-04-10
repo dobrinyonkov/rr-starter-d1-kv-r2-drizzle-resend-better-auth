@@ -1,17 +1,29 @@
+import { eq } from "drizzle-orm";
 import { Camera, Loader2, Trash2, User } from "lucide-react";
 import { useRef, useState } from "react";
 import { useRevalidator } from "react-router";
+import { users } from "~/db/schema";
 import { auth } from "~/lib/auth.server";
+import { db } from "~/lib/db.server";
 import { userContext } from "~/middleware/context";
 
 export async function loader({
 	request,
 	context,
 }: { request: Request; context: { get: Function } }) {
-	const user = context.get(userContext);
-	const sessions = await auth.api.listSessions({
-		headers: request.headers,
-	});
+	const sessionUser = context.get(userContext);
+	const [dbUsers, sessions] = await Promise.all([
+		db.select().from(users).where(eq(users.id, sessionUser.id)),
+		auth.api.listSessions({ headers: request.headers }),
+	]);
+	const user = dbUsers[0]
+		? {
+				id: dbUsers[0].id,
+				name: dbUsers[0].name,
+				email: dbUsers[0].email,
+				image: dbUsers[0].image,
+			}
+		: sessionUser;
 	return { user, sessions };
 }
 
