@@ -1,0 +1,77 @@
+{
+  "name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "react-router dev",
+    "build": "react-router build",
+    "preview": "pnpm build && vite preview",
+    "deploy": "pnpm build && wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "typegen": "wrangler types && react-router typegen",
+    "typecheck": "pnpm typegen && tsc -b",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "db:studio": "drizzle-kit studio",
+    "auth:generate": "npx @better-auth/cli generate --config ./app/lib/auth.server.ts --output ./drizzle/schema/auth.ts",
+    "check": "biome check .",
+    "check:fix": "biome check --fix .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "postinstall": "wrangler types"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.36",
+    "@react-router/node": "^7.6.1",
+    "better-auth": "^1.2.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.44.2",
+    "isbot": "^5.1.27",
+    "lucide-react": "^0.513.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router": "^7.6.1",
+    "resend": "^4.5.1",
+    "tailwind-merge": "^3.3.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@cloudflare/vite-plugin": "^1.30.1",
+    "@react-router/dev": "^7.6.1",
+    "@tailwindcss/vite": "^4.1.8",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
+    "drizzle-kit": "^0.31.1",
+    "jsdom": "^29.0.1",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.1",
+    "wrangler": "^4.77.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "BETTER_AUTH_SECRET": {
+        "description": "Secret for signing auth tokens. Generate with `openssl rand -base64 32`."
+      },
+      "GITHUB_CLIENT_ID": {
+        "description": "GitHub OAuth app client ID from https://github.com/settings/developers (optional — leave empty to disable GitHub sign-in)."
+      },
+      "GITHUB_CLIENT_SECRET": {
+        "description": "GitHub OAuth app client secret (optional — leave empty to disable GitHub sign-in)."
+      },
+      "RESEND_API_KEY": {
+        "description": "Resend API key from https://resend.com/api-keys (required for magic link sign-in)."
+      },
+      "RESEND_FROM": {
+        "description": "Sender email for auth emails, e.g. auth@yourdomain.com. Must be verified in Resend. Use onboarding@resend.dev for testing."
+      }
+    }
+  }
+}
