@@ -16,14 +16,8 @@ export async function loader({
 		db.select().from(users).where(eq(users.id, sessionUser.id)),
 		auth.api.listSessions({ headers: request.headers }),
 	]);
-	const user = dbUsers[0]
-		? {
-				id: dbUsers[0].id,
-				name: dbUsers[0].name,
-				email: dbUsers[0].email,
-				image: dbUsers[0].image,
-			}
-		: sessionUser;
+	const { id, name, email, image } = dbUsers[0] ?? sessionUser;
+	const user = { id, name, email, image };
 	return { user, sessions };
 }
 
