@@ -21,6 +21,7 @@
       "binding": "DB",
       "database_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
       "database_id": "0caf74da-06a9-4f68-972c-ad4d5e0e1e46",
+      "preview_database_id": "bd8f7886-dd63-4591-82be-8c6f1a19570d",
       "migrations_dir": "./drizzle/migrations"
     }
   ],
