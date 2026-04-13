@@ -31,7 +31,38 @@
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth","preview_bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth"
+      "bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
+      "preview_bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth"
     }
-  ]
+  ],
+
+  // Staging environment for PR preview deployments.
+  // Uses isolated D1 + KV so previews don't touch production data.
+  // Because we use @cloudflare/vite-plugin, build with:
+  //   CLOUDFLARE_ENV=staging pnpm build
+  // Wrangler commands (deploy, migrations) use --env staging.
+  "env": {
+    "staging": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "rr-starter-staging",
+          "database_id": "2ea1950c-60aa-456a-aa94-2d6634cb4acf",
+          "migrations_dir": "./drizzle/migrations"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "2f227fd55ddd4c2881a78e365ac878c8"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth"
+        }
+      ]
+    }
+  }
 }
