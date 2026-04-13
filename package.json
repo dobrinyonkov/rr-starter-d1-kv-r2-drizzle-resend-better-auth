@@ -2,6 +2,7 @@
   "name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "react-router dev",
     "build": "react-router build",
