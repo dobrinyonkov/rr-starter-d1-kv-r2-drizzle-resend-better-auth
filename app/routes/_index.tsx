@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 
 export default function Home() {
+  // Production deployment
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-4 text-center">
       <div className="max-w-lg space-y-6">
