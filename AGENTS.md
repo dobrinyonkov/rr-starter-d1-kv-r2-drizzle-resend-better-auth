@@ -235,10 +235,12 @@ The `components.json` configures shadcn to use `~/components/ui` and `~/lib/util
 pnpm dev                  # Start dev server (local D1 + KV via miniflare)
 pnpm build                # Production build
 pnpm deploy               # Build + migrate + deploy to Cloudflare Workers
+pnpm deploy:staging       # Build + migrate + deploy to staging environment
 pnpm typegen              # Regenerate worker-configuration.d.ts + route types
 pnpm db:generate          # Generate Drizzle migration from schema changes
 pnpm db:migrate:local     # Apply migrations to local D1
-pnpm db:migrate:remote    # Apply migrations to remote D1
+pnpm db:migrate:remote    # Apply migrations to remote D1 (production)
+pnpm db:migrate:staging   # Apply migrations to remote D1 (staging)
 pnpm db:studio            # Open Drizzle Studio (visual DB browser)
 pnpm test                 # Run tests once
 pnpm test:watch           # Run tests in watch mode
@@ -259,6 +261,52 @@ Defined in `wrangler.jsonc` under `vars`. For local dev, override in `.env` (git
 | `RESEND_FROM` | Sender email address (must be verified in Resend) |
 
 Cloudflare bindings (D1, KV) are configured in `wrangler.jsonc` under `d1_databases` and `kv_namespaces`.
+
+## Environments & Deployment
+
+### Production vs Staging
+
+`wrangler.jsonc` has two sets of bindings:
+- **Top-level** — production D1, KV, R2 (used by `pnpm deploy` and `wrangler dev`)
+- **`env.staging`** — isolated D1 and KV for PR preview deployments
+
+Bindings are **non-inheritable** in Cloudflare — every binding (D1, KV, R2) must be redeclared inside `env.staging`. If you add a new binding at the top level, you must also add it under `env.staging`.
+
+### How staging works
+
+This project uses `@cloudflare/vite-plugin`, so environments are selected at build time via `CLOUDFLARE_ENV`:
+- `pnpm build` → builds for production (top-level bindings)
+- `CLOUDFLARE_ENV=staging pnpm build` → builds for staging (`env.staging` bindings)
+
+Wrangler commands (deploy, migrations) use `--env staging`:
+- `npx wrangler deploy --env staging`
+- `npx wrangler d1 migrations apply DB --remote --env staging`
+
+### Non-production branch deploy command
+
+In the Cloudflare dashboard under **Workers & Pages > Settings > Build**, the non-production branch deploy command is:
+```
+CLOUDFLARE_ENV=staging pnpm run build && npx wrangler d1 migrations apply DB --remote --env staging && npx wrangler versions upload --env staging
+```
+
+This runs automatically on every PR push — it builds with staging bindings, applies migrations to the staging D1, and uploads the version.
+
+### Adding new Cloudflare bindings
+
+When adding a new binding (e.g., a Queue, another KV namespace):
+1. Add the binding at the top level of `wrangler.jsonc` (production)
+2. Add the same binding under `env.staging` with staging resource IDs
+3. Run `pnpm typegen` to update `worker-configuration.d.ts`
+4. Update `test/mocks/cloudflare-workers.ts` with a stub for the new binding
+
+### Deploy button
+
+The "Deploy to Cloudflare" button (in README) auto-provisions **production** D1, KV, and R2 from the top-level `wrangler.jsonc` config. Staging resources must be created manually after initial deploy:
+```bash
+npx wrangler d1 create <app-name>-staging
+npx wrangler kv namespace create KV_STAGING
+```
+Then paste the IDs into `wrangler.jsonc` under `env.staging` and configure the non-production deploy command in the dashboard.
 
 ## Testing
 
@@ -328,7 +376,7 @@ If you add new Cloudflare bindings, update the mock in `test/mocks/cloudflare-wo
 
 3. **Worker context is a Map** — The second argument to `requestHandler()` in `workers/app.ts` MUST be a `Map<context, value>` (or `null`). Not a plain object, not a `RouterContextProvider` instance.
 
-4. **D1 migrations for deploy** — Drizzle generates migrations but D1 applies them via `wrangler d1 migrations apply`. Run `pnpm db:migrate:remote` before deploying if you changed the schema.
+4. **D1 migrations for deploy** — Drizzle generates migrations but D1 applies them via `wrangler d1 migrations apply`. The `deploy` and `deploy:staging` scripts handle this automatically. For manual migration, use `pnpm db:migrate:remote` (production) or `pnpm db:migrate:staging` (staging).
 
 5. **`renderToReadableStream`** — The `app/entry.server.tsx` uses the edge-compatible streaming API, not Node's `renderToPipeableStream`. Don't replace it with the Node version.
 
