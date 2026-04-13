@@ -42,10 +42,26 @@ jobs:
 
       - name: Wipe preview database
         run: |
-          echo "Dropping all tables from preview database..."
+          echo "Fetching table list..."
+          TABLES=$(npx wrangler d1 execute "$PREVIEW_D1_DATABASE_NAME" --remote --command \
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" \
+            --json | jq -r '.[0].results[].name // empty' 2>/dev/null || echo "")
+
+          if [ -z "$TABLES" ]; then
+            echo "No tables to drop."
+          else
+            echo "Dropping tables: $TABLES"
+            DROP_SQL=""
+            for TABLE in $TABLES; do
+              DROP_SQL="${DROP_SQL}DROP TABLE IF EXISTS \`${TABLE}\`;"
+            done
+            npx wrangler d1 execute "$PREVIEW_D1_DATABASE_NAME" --remote --command "$DROP_SQL"
+            echo "Preview database wiped."
+          fi
+
+          # Clear Drizzle migration tracking so migrations re-run from scratch
           npx wrangler d1 execute "$PREVIEW_D1_DATABASE_NAME" --remote --command \
-            "PRAGMA writable_schema = ON; DELETE FROM sqlite_master WHERE type IN ('table', 'index', 'trigger', 'view'); PRAGMA writable_schema = OFF; VACUUM;"
-          echo "Preview database wiped."
+            "DROP TABLE IF EXISTS d1_migrations; DROP TABLE IF EXISTS __drizzle_migrations;" || true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
