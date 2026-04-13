@@ -9,7 +9,7 @@ export default function Home() {
           React Router + Cloudflare Starter
         </h1>
         <p className="text-xs text-green-600 font-medium">
-          Preview deployment active
+          Preview deployment active (staging env)
         </p>
         <p className="text-lg text-muted-foreground">
           Better Auth, D1 + Drizzle, KV, Resend, Tailwind, and shadcn/ui. Everything you need to

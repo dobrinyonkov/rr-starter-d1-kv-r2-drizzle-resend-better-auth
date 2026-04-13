@@ -33,5 +33,18 @@
       "binding": "R2",
       "bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth","preview_bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth"
     }
-  ]
+  ],
+
+  "env": {
+    "staging": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth-preview",
+          "database_id": "bd8f7886-dd63-4591-82be-8c6f1a19570d",
+          "migrations_dir": "./drizzle/migrations"
+        }
+      ]
+    }
+  }
 }
