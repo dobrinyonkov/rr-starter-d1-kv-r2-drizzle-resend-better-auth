@@ -28,13 +28,17 @@ pnpm install
 ### 2. Create Cloudflare resources
 
 ```bash
-# Create D1 database
-npx wrangler d1 create starter
-# Create KV namespace
+# Production resources
+npx wrangler d1 create my-app
 npx wrangler kv namespace create KV
+npx wrangler r2 bucket create my-app
+
+# Staging resources (for PR preview deployments)
+npx wrangler d1 create my-app-staging
+npx wrangler kv namespace create KV_STAGING
 ```
 
-Copy the returned IDs into `wrangler.jsonc`.
+Copy the returned IDs into `wrangler.jsonc` — production IDs go in the top-level bindings, staging IDs go in `env.staging`.
 
 ### 3. Configure environment
 
@@ -63,11 +67,46 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## Deploy
 
+### One-click deploy
+
+Click the button above to deploy via the Cloudflare dashboard. The deploy flow will:
+1. Fork the repo into your GitHub account
+2. Auto-provision D1, KV, and R2 resources for **production**
+3. Build and deploy the Worker
+
+After the initial deploy, [set up staging for PR previews](#staging-environment-for-pr-previews).
+
+### Manual deploy
+
 ```bash
 pnpm deploy
 ```
 
 This builds the app, applies D1 migrations, and deploys to Cloudflare Workers.
+
+### Staging environment (for PR previews)
+
+The `wrangler.jsonc` includes an `env.staging` block with separate D1 and KV bindings. PR preview deployments use this environment so they never touch your production database.
+
+**Initial setup** (once per project):
+
+1. Create staging resources and paste IDs into `wrangler.jsonc` under `env.staging` (see [step 2](#2-create-cloudflare-resources))
+2. In the Cloudflare dashboard under **Workers & Pages > your project > Settings > Build**, set the **Non-production branch deploy command** to:
+   ```
+   CLOUDFLARE_ENV=staging pnpm run build && npx wrangler d1 migrations apply DB --remote --env staging && npx wrangler versions upload --env staging
+   ```
+3. Apply initial migrations to the staging DB:
+   ```bash
+   pnpm db:migrate:staging
+   ```
+
+Now every PR push builds against the staging environment, runs migrations on the staging D1, and deploys an isolated preview.
+
+**Manual staging deploy:**
+
+```bash
+pnpm deploy:staging
+```
 
 ## Project Structure
 
@@ -105,11 +144,13 @@ drizzle/
 | `pnpm dev` | Start dev server with local D1 + KV |
 | `pnpm build` | Production build |
 | `pnpm deploy` | Build + migrate + deploy to Cloudflare |
+| `pnpm deploy:staging` | Build + migrate + deploy to staging env |
 | `pnpm test` | Run tests |
 | `pnpm test:watch` | Run tests in watch mode |
 | `pnpm db:generate` | Generate migration from schema changes |
 | `pnpm db:migrate:local` | Apply migrations locally |
 | `pnpm db:migrate:remote` | Apply migrations to production D1 |
+| `pnpm db:migrate:staging` | Apply migrations to staging D1 |
 | `pnpm db:studio` | Open Drizzle Studio |
 | `pnpm check` | Lint + format check (Biome) |
 
