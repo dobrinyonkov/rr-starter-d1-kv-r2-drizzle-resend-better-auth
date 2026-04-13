@@ -69,6 +69,28 @@ pnpm deploy
 
 This builds the app, applies D1 migrations, and deploys to Cloudflare Workers.
 
+## Preview Deployments
+
+Preview deployments use a separate D1 database so they don't touch production data. A GitHub Actions workflow (`.github/workflows/preview.yml`) wipes and re-migrates the preview DB on every PR push.
+
+### Setup
+
+1. Create a preview D1 database:
+   ```bash
+   npx wrangler d1 create <your-app>-preview
+   ```
+2. Paste the returned `database_id` as `preview_database_id` in `wrangler.jsonc`
+3. Add these GitHub repository secrets (Settings > Secrets and variables > Actions):
+
+   | Secret | How to get it |
+   |--------|--------------|
+   | `CLOUDFLARE_API_TOKEN` | [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) — create a token with **D1 Edit** and **Workers Scripts Edit** permissions |
+   | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard sidebar > Account ID |
+
+4. Update the `PREVIEW_D1_DATABASE_NAME` env var in `.github/workflows/preview.yml` to match your database name
+
+The workflow runs automatically on PR open/push, and can be triggered manually via **Actions > Preview DB Setup > Run workflow** to switch between PRs.
+
 ## Project Structure
 
 ```

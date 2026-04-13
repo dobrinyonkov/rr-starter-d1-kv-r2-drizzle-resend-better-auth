@@ -16,11 +16,15 @@
 
   // Run: npx wrangler d1 create starter
   // Then paste the returned database_id below
+  // For preview deployments, create a separate D1 database:
+  //   npx wrangler d1 create <name>-preview
+  // and set preview_database_id below. See .github/workflows/preview.yml
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
       "database_id": "0caf74da-06a9-4f68-972c-ad4d5e0e1e46",
+      "preview_database_id": "6da7137f-c60e-4c69-b8a5-19aad059e557",
       "migrations_dir": "./drizzle/migrations"
     }
   ],
