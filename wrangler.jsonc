@@ -2,9 +2,12 @@
   "name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
   "main": "./workers/app.ts",
   "compatibility_date": "2025-04-04",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
-
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "observability": {
+    "enabled": true
+  },
   // Run: npx wrangler kv namespace create KV
   // Then paste the returned id below
   "kv_namespaces": [
@@ -13,28 +16,15 @@
       "id": "3edbb3f628bd4b5cabb5c00f19ce908b"
     }
   ],
-
-  // Run: npx wrangler d1 create starter
-  // Then paste the returned database_id below
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
-      "database_id": "0caf74da-06a9-4f68-972c-ad4d5e0e1e46",
-      "preview_database_id": "bd8f7886-dd63-4591-82be-8c6f1a19570d",
-      "migrations_dir": "./drizzle/migrations"
-    }
-  ],
-
   // Run: npx wrangler r2 bucket create user-photos
   // Then update the bucket_name below if needed
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth","preview_bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth"
+      "bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
+      "preview_bucket_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth"
     }
   ],
-
   "env": {
     "staging": {
       "d1_databases": [
@@ -45,6 +35,18 @@
           "migrations_dir": "./drizzle/migrations"
         }
       ]
+    },
+    "production": {
+      // Run: npx wrangler d1 create starter
+      // Then paste the returned database_id below
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "rr-starter-d1-kv-r2-drizzle-resend-better-auth",
+          "database_id": "0caf74da-06a9-4f68-972c-ad4d5e0e1e46",
+          "migrations_dir": "./drizzle/migrations"
+        }
+      ],
     }
   }
 }
