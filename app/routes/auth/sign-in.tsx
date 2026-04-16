@@ -3,6 +3,22 @@ import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { signIn } from "~/lib/auth.client";
 
+function getErrorMessage(error: unknown): string {
+	if (!error) return "An unknown error occurred";
+	if (typeof error === "object" && error !== null) {
+		if ("message" in error && typeof error.message === "string") {
+			return error.message;
+		}
+		if ("error" in error && typeof error.error === "string") {
+			return error.error;
+		}
+	}
+	if (typeof error === "string") {
+		return error;
+	}
+	return "An unexpected error occurred. Please try again.";
+}
+
 export default function SignIn() {
 	const [searchParams] = useSearchParams();
 	const redirectTo = searchParams.get("redirectTo") || "/app";
@@ -26,15 +42,26 @@ export default function SignIn() {
 			} else {
 				setMagicLinkSent(true);
 			}
-		} catch {
-			setError("Something went wrong");
+		} catch (err) {
+			setError(getErrorMessage(err));
 		} finally {
 			setLoading(false);
 		}
 	}
 
 	async function handleGitHub() {
-		await signIn.social({ provider: "github", callbackURL: redirectTo });
+		setError("");
+		try {
+			const result = await signIn.social({
+				provider: "github",
+				callbackURL: redirectTo,
+			});
+			if (result?.error) {
+				setError(getErrorMessage(result.error));
+			}
+		} catch (err) {
+			setError(getErrorMessage(err));
+		}
 	}
 
 	if (magicLinkSent) {
@@ -103,7 +130,11 @@ export default function SignIn() {
 					/>
 				</div>
 
-				{error && <p className="text-sm text-destructive">{error}</p>}
+				{error && (
+					<div className="rounded bg-error-container p-3 border border-error">
+						<p className="text-xs font-medium text-error">{error}</p>
+					</div>
+				)}
 
 				<button
 					type="submit"
