@@ -2,22 +2,7 @@ import { ArrowRight, Github, Loader2, Mail } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { signIn } from "~/lib/auth.client";
-
-function getErrorMessage(error: unknown): string {
-	if (!error) return "An unknown error occurred";
-	if (typeof error === "object" && error !== null) {
-		if ("message" in error && typeof error.message === "string") {
-			return error.message;
-		}
-		if ("error" in error && typeof error.error === "string") {
-			return error.error;
-		}
-	}
-	if (typeof error === "string") {
-		return error;
-	}
-	return "An unexpected error occurred. Please try again.";
-}
+import { getErrorMessage } from "~/lib/utils";
 
 export default function SignIn() {
 	const [searchParams] = useSearchParams();
