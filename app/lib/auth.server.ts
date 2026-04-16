@@ -38,12 +38,16 @@ export const auth = betterAuth({
 	// Store sessions in KV for fast reads
 	secondaryStorage: {
 		get: (key) => env.KV.get(`auth:${key}`),
-		set: (key, value, ttl) =>
-			env.KV.put(
+		set: (key, value, ttl) => {
+			// Cloudflare KV requires expirationTtl to be at least 60 seconds
+			const minTtl = 60;
+			const safeTtl = ttl && ttl < minTtl ? minTtl : ttl;
+			return env.KV.put(
 				`auth:${key}`,
 				value,
-				ttl ? { expirationTtl: ttl } : undefined,
-			),
+				safeTtl ? { expirationTtl: safeTtl } : undefined,
+			);
+		},
 		delete: (key) => env.KV.delete(`auth:${key}`),
 	},
 

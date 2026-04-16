@@ -8,6 +8,8 @@ import {
 	isRouteErrorResponse,
 } from "react-router";
 
+import { DevToolsPanel } from "~/components/DevToolsPanel";
+import { DevToolsProvider } from "~/components/DevToolsProvider";
 import "./styles/app.css";
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -29,7 +31,12 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function Root() {
-	return <Outlet />;
+	return (
+		<DevToolsProvider>
+			<Outlet />
+			<DevToolsPanel />
+		</DevToolsProvider>
+	);
 }
 
 export function ErrorBoundary({ error }: { error: unknown }) {

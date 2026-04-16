@@ -2,6 +2,7 @@ import { ArrowRight, Github, Loader2, Mail } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { signIn } from "~/lib/auth.client";
+import { getErrorMessage } from "~/lib/utils";
 
 export default function SignIn() {
 	const [searchParams] = useSearchParams();
@@ -26,15 +27,26 @@ export default function SignIn() {
 			} else {
 				setMagicLinkSent(true);
 			}
-		} catch {
-			setError("Something went wrong");
+		} catch (err) {
+			setError(getErrorMessage(err));
 		} finally {
 			setLoading(false);
 		}
 	}
 
 	async function handleGitHub() {
-		await signIn.social({ provider: "github", callbackURL: redirectTo });
+		setError("");
+		try {
+			const result = await signIn.social({
+				provider: "github",
+				callbackURL: redirectTo,
+			});
+			if (result?.error) {
+				setError(getErrorMessage(result.error));
+			}
+		} catch (err) {
+			setError(getErrorMessage(err));
+		}
 	}
 
 	if (magicLinkSent) {
@@ -103,7 +115,11 @@ export default function SignIn() {
 					/>
 				</div>
 
-				{error && <p className="text-sm text-destructive">{error}</p>}
+				{error && (
+					<div className="rounded bg-error-container p-3 border border-error">
+						<p className="text-xs font-medium text-error">{error}</p>
+					</div>
+				)}
 
 				<button
 					type="submit"
