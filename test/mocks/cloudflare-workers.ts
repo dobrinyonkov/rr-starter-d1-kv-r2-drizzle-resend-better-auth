@@ -66,6 +66,6 @@ export const env = {
 		},
 	},
 	SEND_EMAIL: {
-		send: async (_message: unknown) => ({ success: true }),
+		send: async (_message: unknown) => ({ messageId: "test-message-id" }),
 	},
 };
