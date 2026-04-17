@@ -9,11 +9,15 @@ declare namespace Cloudflare {
 		KV: KVNamespace;
 		R2: R2Bucket;
 		DB: D1Database;
+		SEND_EMAIL: SendEmail;
+		FROM_EMAIL: string;
 	}
 	interface Env {
 		KV: KVNamespace;
 		R2: R2Bucket;
 		DB: D1Database;
+		SEND_EMAIL: SendEmail;
+		FROM_EMAIL: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

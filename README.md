@@ -11,7 +11,7 @@ Everything you need to build a full-stack app on Cloudflare Workers.
 - **Auth** — [Better Auth](https://www.better-auth.com/) (magic link + GitHub OAuth)
 - **Database** — [Cloudflare D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team/)
 - **Sessions** — [Cloudflare KV](https://developers.cloudflare.com/kv/) (secondary storage + rate limiting)
-- **Email** — [Resend](https://resend.com/) + [React Email](https://react.email/)
+- **Email** — [Cloudflare Email Service](https://developers.cloudflare.com/email-routing/) + [React Email](https://react.email/)
 - **Styling** — [Tailwind CSS v4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
 - **Tooling** — TypeScript, [Biome](https://biomejs.dev/), [Vitest](https://vitest.dev/)
 
@@ -53,8 +53,7 @@ cp .env.example .env
 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
 | `GITHUB_CLIENT_ID` | [GitHub Developer Settings](https://github.com/settings/developers) |
 | `GITHUB_CLIENT_SECRET` | Same as above |
-| `RESEND_API_KEY` | [Resend Dashboard](https://resend.com/api-keys) |
-| `RESEND_FROM` | Verified domain in Resend (use `onboarding@resend.dev` for testing) |
+| `FROM_EMAIL` | A verified sender address in [Cloudflare Email Routing](https://developers.cloudflare.com/email-routing/) |
 
 ### 4. Run migrations & start dev
 
@@ -117,7 +116,7 @@ app/
     auth.server.ts          Better Auth config (D1, KV, magic link, GitHub)
     auth.client.ts          Better Auth client
     db.server.ts            Drizzle D1 client
-    email.server.ts         Resend email sender
+    email.server.ts         Cloudflare Email Service sender
   middleware/
     context.ts              Typed route contexts (client-safe)
     auth.server.ts          Auth guard middleware (server-only)
