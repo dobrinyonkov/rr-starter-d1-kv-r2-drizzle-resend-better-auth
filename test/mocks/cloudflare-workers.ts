@@ -11,8 +11,7 @@ export const env = {
 	BETTER_AUTH_SECRET: "test-secret-for-testing-only",
 	GITHUB_CLIENT_ID: "test-github-id",
 	GITHUB_CLIENT_SECRET: "test-github-secret",
-	RESEND_API_KEY: "re_test_key",
-	RESEND_FROM: "test@test.com",
+	FROM_EMAIL: "test@test.com",
 	DB: {
 		prepare: () => ({
 			bind: () => ({
@@ -65,5 +64,8 @@ export const env = {
 				httpMetadata: item.httpMetadata ?? {},
 			};
 		},
+	},
+	SEND_EMAIL: {
+		send: async (_message: unknown) => ({ messageId: "test-message-id" }),
 	},
 };

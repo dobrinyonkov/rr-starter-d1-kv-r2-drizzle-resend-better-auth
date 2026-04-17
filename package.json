@@ -34,7 +34,6 @@
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"react-router": "^7.6.1",
-		"resend": "^4.5.1",
 		"tailwind-merge": "^3.3.0",
 		"zod": "^4.3.6"
 	},
@@ -68,11 +67,8 @@
 			"GITHUB_CLIENT_SECRET": {
 				"description": "GitHub OAuth app client secret (optional — leave empty to disable GitHub sign-in)."
 			},
-			"RESEND_API_KEY": {
-				"description": "Resend API key from https://resend.com/api-keys (required for magic link sign-in)."
-			},
-			"RESEND_FROM": {
-				"description": "Sender email for auth emails, e.g. auth@yourdomain.com. Must be verified in Resend. Use onboarding@resend.dev for testing."
+			"FROM_EMAIL": {
+				"description": "Sender email for auth emails, e.g. auth@yourdomain.com. Must be a verified address in Cloudflare Email Routing."
 			}
 		}
 	}
