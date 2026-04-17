@@ -15,5 +15,6 @@ export async function sendMagicLinkEmail({
 		to,
 		subject: "Sign in to Starter",
 		html,
+		track_clicks: false,
 	});
 }
