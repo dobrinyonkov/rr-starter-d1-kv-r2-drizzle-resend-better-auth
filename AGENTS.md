@@ -29,11 +29,11 @@ Code runs in the **Cloudflare Workers runtime** (workerd), NOT Node.js. Key diff
 - Files ending in `.server.ts` are **server-only** and will error if imported in client code
 - `app/middleware/context.ts` is **shared** (client + server safe) — it only contains types and `unstable_createContext` calls
 - `app/middleware/auth.server.ts` is **server-only** — it imports `auth.server.ts` and contains the actual middleware logic
-- Route modules can import `.server` files ONLY in `loader`, `action`, or `unstable_middleware` exports — these are automatically stripped from the client bundle
-- When a route needs both middleware (server) and a component (client), import contexts from `~/middleware/context` (shared) and middleware from `~/middleware/auth.server` (server-only)
+- Route modules can import `.server` files ONLY in `loader`, `action`, or `middleware` exports — these are automatically stripped from the client bundle. **Never use `export const unstable_middleware`** — the bundler only strips the `middleware` export name; `unstable_middleware` leaks to the client and causes a build error.
+- When a route needs both middleware (server) and a component (client), use a **static** top-level `import { authMiddleware } from "~/middleware/auth.server"` and `export const middleware = [authMiddleware]`. Import contexts from `~/middleware/context` (shared) in the component. See `app/routes/app/layout.tsx` for the canonical example.
 
 **React Router unstable APIs** — This project uses three unstable flags in `react-router.config.ts`:
-- `unstable_middleware` — enables route middleware via `export const unstable_middleware`
+- `unstable_middleware` — enables route middleware; the flag name is `unstable_middleware` but the **export in route files must be `export const middleware = [...]`** (without the `unstable_` prefix)
 - `unstable_splitRouteModules` — splits route modules so server-only imports don't leak to client
 - `unstable_viteEnvironmentApi` — required for the Cloudflare Vite plugin to coordinate builds
 
@@ -109,7 +109,7 @@ Routes are configured manually in `app/routes.ts`, NOT via file-based routing.
 | `/app/notes` | Authenticated | authMiddleware (via layout) | Notes CRUD |
 | `/app/settings` | Authenticated | authMiddleware (via layout) | User settings |
 
-To add a new authenticated route: add it inside the `layout("routes/app/layout.tsx", [...])` block in `routes.ts`. The layout's `unstable_middleware` handles auth protection for all child routes.
+To add a new authenticated route: add it inside the `layout("routes/app/layout.tsx", [...])` block in `routes.ts`. The layout's `middleware` export handles auth protection for all child routes.
 
 To add a new public route: add it at the top level in `routes.ts`.
 
@@ -164,7 +164,7 @@ To add a new public route: add it at the top level in `routes.ts`.
 
 **Key rules when extending**:
 - Route components (default exports) are **client code** — don't import `.server.ts` files from them
-- `loader`, `action`, and `unstable_middleware` exports are **server code** — they can import `.server.ts` files
+- `loader`, `action`, and `middleware` exports are **server code** — they can import `.server.ts` files
 - Contexts (`userContext`, `sessionContext`) come from `~/middleware/context` (client-safe)
 - All routes under `app/layout.tsx` are auth-protected automatically via the layout's middleware
 - After adding new routes, run `pnpm typegen` to update route types
@@ -246,6 +246,8 @@ pnpm test                 # Run tests once
 pnpm test:watch           # Run tests in watch mode
 pnpm check                # Biome lint + format check
 pnpm check:fix            # Biome auto-fix
+pnpm add <pkg>            # Add a runtime dependency (updates pnpm-lock.yaml)
+pnpm add -D <pkg>         # Add a dev dependency
 ```
 
 ## Environment Variables
@@ -378,8 +380,4 @@ If you add new Cloudflare bindings, update the mock in `test/mocks/cloudflare-wo
 
 4. **D1 migrations for deploy** — Drizzle generates migrations but D1 applies them via `wrangler d1 migrations apply`. The `deploy` and `deploy:staging` scripts handle this automatically. For manual migration, use `pnpm db:migrate:remote` (production) or `pnpm db:migrate:staging` (staging).
 
-5. **`renderToReadableStream`** — The `app/entry.server.tsx` uses the edge-compatible streaming API, not Node's `renderToPipeableStream`. Don't replace it with the Node version.
-
-6. **Drizzle schema uses plural table names** — The Better Auth adapter must have `usePlural: true` in `auth.server.ts`. If you add new auth-related tables, keep them plural.
-
-7. **`wrangler types`** regenerates `worker-configuration.d.ts` — Run `pnpm typegen` after changing `wrangler.jsonc` bindings or vars. The `postinstall` script does this automatically.
+8. **Always use `pnpm` to install packages** — This project uses `pnpm` as its package manager and commits `pnpm-lock.yaml`. Using `npm install` or `yarn add` to add packages will update `package.json` but leave `pnpm-lock.yaml` out of sync, causing the Cloudflare CI build to fail with `ERR_PNPM_OUTDATED_LOCKFILE`. Always use `pnpm add <pkg>` to add dependencies. If the lockfile ever gets out of sync (e.g. it was accidentally updated with npm), run `pnpm install --no-frozen-lockfile` to regenerate it.

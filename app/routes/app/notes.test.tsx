@@ -19,13 +19,13 @@ const mockNotes = [
 ];
 
 describe("Notes page", () => {
-	function renderNotes(notes = mockNotes) {
+	function renderNotes(notes = mockNotes, isPro = false) {
 		const Stub = createRoutesStub([
 			{
 				path: "/app/notes",
 				Component: NotesPage,
 				loader() {
-					return { notes };
+					return { notes, isPro, noteCount: notes.length };
 				},
 				action() {
 					return { ok: true };

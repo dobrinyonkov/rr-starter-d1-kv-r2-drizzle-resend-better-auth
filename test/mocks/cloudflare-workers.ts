@@ -13,6 +13,10 @@ export const env = {
 	GITHUB_CLIENT_SECRET: "test-github-secret",
 	RESEND_API_KEY: "re_test_key",
 	RESEND_FROM: "test@test.com",
+	STRIPE_SECRET_KEY: "sk_test_fake",
+	STRIPE_PRICE_ID: "price_test_fake",
+	STRIPE_WEBHOOK_SECRET: "whsec_test_fake",
+	APP_URL: "http://localhost:5173",
 	DB: {
 		prepare: () => ({
 			bind: () => ({

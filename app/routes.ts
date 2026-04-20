@@ -16,6 +16,11 @@ export default [
 	// Photo upload / serve API (authenticated via middleware)
 	route("api/photos/*", "routes/api/photos.$.tsx"),
 
+	// Stripe API routes
+	route("api/stripe/checkout", "routes/api/stripe/checkout.ts"),
+	route("api/stripe/webhook", "routes/api/stripe/webhook.ts"),
+	route("api/stripe/portal", "routes/api/stripe/portal.ts"),
+
 	// Auth pages (guest only)
 	layout("routes/auth/layout.tsx", [
 		route("sign-in", "routes/auth/sign-in.tsx"),
