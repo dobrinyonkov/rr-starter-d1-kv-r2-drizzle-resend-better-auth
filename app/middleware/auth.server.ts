@@ -28,7 +28,7 @@ async function getSession(request: Request): Promise<Session | null> {
 const GUEST_ROUTES = ["/sign-in"];
 
 // Protected routes: redirect unauthenticated users to /sign-in
-const PROTECTED_PREFIXES = ["/app"];
+const PROTECTED_PREFIXES = ["/app", "/api/stripe/checkout", "/api/stripe/portal"];
 
 export const authMiddleware = async ({
 	request,
