@@ -30,12 +30,17 @@ export async function action({
 		);
 	}
 
-	const portalSession = await stripe.billingPortal.sessions.create({
-		customer: dbUser.stripeCustomerId,
-		return_url: `${env.APP_URL}/app/settings`,
-	});
+	try {
+		const portalSession = await stripe.billingPortal.sessions.create({
+			customer: dbUser.stripeCustomerId,
+			return_url: `${env.APP_URL}/app/settings`,
+		});
 
-	return Response.json({ url: portalSession.url });
+		return Response.json({ url: portalSession.url });
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Failed to open billing portal";
+		return Response.json({ error: message }, { status: 500 });
+	}
 }
 
 export const middleware = [authMiddleware];
