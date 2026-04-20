@@ -1,6 +1,3 @@
-import { eq } from "drizzle-orm";
-import { users } from "~/db/schema";
-import { db } from "~/lib/db.server";
 import { getStripe } from "~/lib/stripe.server";
 import { userContext } from "~/middleware/context";
 
@@ -23,6 +20,7 @@ export async function action({
 		cancel_url: `${env.APP_URL}/app/settings?cancelled=true`,
 		customer_email: user.email,
 		metadata: { userId: user.id },
+		subscription_data: { metadata: { userId: user.id } },
 	});
 
 	return Response.json({ url: session.url });
