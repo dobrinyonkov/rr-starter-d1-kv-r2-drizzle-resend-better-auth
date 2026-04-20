@@ -11,10 +11,10 @@ export async function action({
 		return Response.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
-	const { env } = await import("cloudflare:workers");
-	const stripe = getStripe(env);
-
 	try {
+		const { env } = await import("cloudflare:workers");
+		const stripe = getStripe(env);
+
 		const session = await stripe.checkout.sessions.create({
 			mode: "subscription",
 			line_items: [{ price: env.STRIPE_PRICE_ID, quantity: 1 }],

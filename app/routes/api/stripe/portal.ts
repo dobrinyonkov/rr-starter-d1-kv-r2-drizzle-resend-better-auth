@@ -14,23 +14,23 @@ export async function action({
 		return Response.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
-	const { env } = await import("cloudflare:workers");
-	const stripe = getStripe(env);
-
-	// Fetch user from DB to get stripeCustomerId
-	const [dbUser] = await db
-		.select({ stripeCustomerId: users.stripeCustomerId })
-		.from(users)
-		.where(eq(users.id, user.id));
-
-	if (!dbUser?.stripeCustomerId) {
-		return Response.json(
-			{ error: "No billing account found" },
-			{ status: 400 },
-		);
-	}
-
 	try {
+		const { env } = await import("cloudflare:workers");
+		const stripe = getStripe(env);
+
+		// Fetch user from DB to get stripeCustomerId
+		const [dbUser] = await db
+			.select({ stripeCustomerId: users.stripeCustomerId })
+			.from(users)
+			.where(eq(users.id, user.id));
+
+		if (!dbUser?.stripeCustomerId) {
+			return Response.json(
+				{ error: "No billing account found" },
+				{ status: 400 },
+			);
+		}
+
 		const portalSession = await stripe.billingPortal.sessions.create({
 			customer: dbUser.stripeCustomerId,
 			return_url: `${env.APP_URL}/app/settings`,
