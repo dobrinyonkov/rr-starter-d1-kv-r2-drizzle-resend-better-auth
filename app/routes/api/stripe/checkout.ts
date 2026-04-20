@@ -1,3 +1,4 @@
+import { authMiddleware } from "~/middleware/auth.server";
 import { getStripe } from "~/lib/stripe.server";
 import { userContext } from "~/middleware/context";
 
@@ -26,12 +27,4 @@ export async function action({
 	return Response.json({ url: session.url });
 }
 
-export const unstable_middleware = [
-	async (args: {
-		request: Request;
-		context: { set: Function };
-	}) => {
-		const { authMiddleware } = await import("~/middleware/auth.server");
-		return authMiddleware(args);
-	},
-];
+export const middleware = [authMiddleware];

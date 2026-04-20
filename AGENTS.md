@@ -29,11 +29,11 @@ Code runs in the **Cloudflare Workers runtime** (workerd), NOT Node.js. Key diff
 - Files ending in `.server.ts` are **server-only** and will error if imported in client code
 - `app/middleware/context.ts` is **shared** (client + server safe) — it only contains types and `unstable_createContext` calls
 - `app/middleware/auth.server.ts` is **server-only** — it imports `auth.server.ts` and contains the actual middleware logic
-- Route modules can import `.server` files ONLY in `loader`, `action`, or `unstable_middleware` exports — these are automatically stripped from the client bundle
-- When a route needs both middleware (server) and a component (client), import contexts from `~/middleware/context` (shared) and middleware from `~/middleware/auth.server` (server-only)
+- Route modules can import `.server` files ONLY in `loader`, `action`, or `middleware` exports — these are automatically stripped from the client bundle. **Never use `export const unstable_middleware`** — the bundler only strips the `middleware` export name; `unstable_middleware` leaks to the client and causes a build error.
+- When a route needs both middleware (server) and a component (client), use a **static** top-level `import { authMiddleware } from "~/middleware/auth.server"` and `export const middleware = [authMiddleware]`. Import contexts from `~/middleware/context` (shared) in the component. See `app/routes/app/layout.tsx` for the canonical example.
 
 **React Router unstable APIs** — This project uses three unstable flags in `react-router.config.ts`:
-- `unstable_middleware` — enables route middleware via `export const unstable_middleware`
+- `unstable_middleware` — enables route middleware; the flag name is `unstable_middleware` but the **export in route files must be `export const middleware = [...]`** (without the `unstable_` prefix)
 - `unstable_splitRouteModules` — splits route modules so server-only imports don't leak to client
 - `unstable_viteEnvironmentApi` — required for the Cloudflare Vite plugin to coordinate builds
 
@@ -109,7 +109,7 @@ Routes are configured manually in `app/routes.ts`, NOT via file-based routing.
 | `/app/notes` | Authenticated | authMiddleware (via layout) | Notes CRUD |
 | `/app/settings` | Authenticated | authMiddleware (via layout) | User settings |
 
-To add a new authenticated route: add it inside the `layout("routes/app/layout.tsx", [...])` block in `routes.ts`. The layout's `unstable_middleware` handles auth protection for all child routes.
+To add a new authenticated route: add it inside the `layout("routes/app/layout.tsx", [...])` block in `routes.ts`. The layout's `middleware` export handles auth protection for all child routes.
 
 To add a new public route: add it at the top level in `routes.ts`.
 
@@ -164,7 +164,7 @@ To add a new public route: add it at the top level in `routes.ts`.
 
 **Key rules when extending**:
 - Route components (default exports) are **client code** — don't import `.server.ts` files from them
-- `loader`, `action`, and `unstable_middleware` exports are **server code** — they can import `.server.ts` files
+- `loader`, `action`, and `middleware` exports are **server code** — they can import `.server.ts` files
 - Contexts (`userContext`, `sessionContext`) come from `~/middleware/context` (client-safe)
 - All routes under `app/layout.tsx` are auth-protected automatically via the layout's middleware
 - After adding new routes, run `pnpm typegen` to update route types

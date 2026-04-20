@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { authMiddleware } from "~/middleware/auth.server";
 import { users } from "~/db/schema";
 import { db } from "~/lib/db.server";
 import { getStripe } from "~/lib/stripe.server";
@@ -37,12 +38,4 @@ export async function action({
 	return Response.json({ url: portalSession.url });
 }
 
-export const unstable_middleware = [
-	async (args: {
-		request: Request;
-		context: { set: Function };
-	}) => {
-		const { authMiddleware } = await import("~/middleware/auth.server");
-		return authMiddleware(args);
-	},
-];
+export const middleware = [authMiddleware];
