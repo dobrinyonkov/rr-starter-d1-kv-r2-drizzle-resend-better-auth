@@ -246,6 +246,8 @@ pnpm test                 # Run tests once
 pnpm test:watch           # Run tests in watch mode
 pnpm check                # Biome lint + format check
 pnpm check:fix            # Biome auto-fix
+pnpm add <pkg>            # Add a runtime dependency (updates pnpm-lock.yaml)
+pnpm add -D <pkg>         # Add a dev dependency
 ```
 
 ## Environment Variables
@@ -378,8 +380,4 @@ If you add new Cloudflare bindings, update the mock in `test/mocks/cloudflare-wo
 
 4. **D1 migrations for deploy** — Drizzle generates migrations but D1 applies them via `wrangler d1 migrations apply`. The `deploy` and `deploy:staging` scripts handle this automatically. For manual migration, use `pnpm db:migrate:remote` (production) or `pnpm db:migrate:staging` (staging).
 
-5. **`renderToReadableStream`** — The `app/entry.server.tsx` uses the edge-compatible streaming API, not Node's `renderToPipeableStream`. Don't replace it with the Node version.
-
-6. **Drizzle schema uses plural table names** — The Better Auth adapter must have `usePlural: true` in `auth.server.ts`. If you add new auth-related tables, keep them plural.
-
-7. **`wrangler types`** regenerates `worker-configuration.d.ts` — Run `pnpm typegen` after changing `wrangler.jsonc` bindings or vars. The `postinstall` script does this automatically.
+8. **Always use `pnpm` to install packages** — This project uses `pnpm` as its package manager and commits `pnpm-lock.yaml`. Using `npm install` or `yarn add` to add packages will update `package.json` but leave `pnpm-lock.yaml` out of sync, causing the Cloudflare CI build to fail with `ERR_PNPM_OUTDATED_LOCKFILE`. Always use `pnpm add <pkg>` to add dependencies. If the lockfile ever gets out of sync (e.g. it was accidentally updated with npm), run `pnpm install --no-frozen-lockfile` to regenerate it.
