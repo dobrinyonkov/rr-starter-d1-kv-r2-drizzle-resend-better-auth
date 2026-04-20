@@ -1,19 +1,28 @@
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Form, useNavigation } from "react-router";
-import { notes } from "~/db/schema";
+import { notes, users } from "~/db/schema";
 import { db } from "~/lib/db.server";
 import { userContext } from "~/middleware/context";
+
+const FREE_NOTE_LIMIT = 3;
 
 // Load all notes for the current user
 export async function loader({ context }: { context: { get: Function } }) {
 	const user = context.get(userContext);
-	const userNotes = await db.query.notes.findMany({
-		where: eq(notes.userId, user.id),
-		orderBy: [desc(notes.createdAt)],
-	});
-	return { notes: userNotes };
+	const [userNotes, [dbUser]] = await Promise.all([
+		db.query.notes.findMany({
+			where: eq(notes.userId, user.id),
+			orderBy: [desc(notes.createdAt)],
+		}),
+		db.select({ isPro: users.isPro }).from(users).where(eq(users.id, user.id)),
+	]);
+	return {
+		notes: userNotes,
+		isPro: dbUser?.isPro ?? false,
+		noteCount: userNotes.length,
+	};
 }
 
 // Handle create and delete actions
@@ -29,6 +38,23 @@ export async function action({
 		const title = formData.get("title") as string;
 		const content = formData.get("content") as string;
 		if (!title?.trim()) return { error: "Title is required" };
+
+		// Check free tier limit
+		const [dbUser] = await db
+			.select({ isPro: users.isPro })
+			.from(users)
+			.where(eq(users.id, user.id));
+
+		if (!dbUser?.isPro) {
+			const [{ noteCount }] = await db
+				.select({ noteCount: count() })
+				.from(notes)
+				.where(eq(notes.userId, user.id));
+
+			if (noteCount >= FREE_NOTE_LIMIT) {
+				return { error: "Upgrade to Pro to create more notes" };
+			}
+		}
 
 		await db.insert(notes).values({
 			title: title.trim(),
@@ -54,13 +80,16 @@ type Note = {
 
 export default function NotesPage({
 	loaderData,
+	actionData,
 }: {
-	loaderData: { notes: Note[] };
+	loaderData: { notes: Note[]; isPro: boolean; noteCount: number };
+	actionData?: { error?: string; ok?: boolean };
 }) {
-	const { notes } = loaderData;
+	const { notes, isPro, noteCount } = loaderData;
 	const [showForm, setShowForm] = useState(false);
 	const navigation = useNavigation();
 	const isSubmitting = navigation.state === "submitting";
+	const atLimit = !isPro && noteCount >= FREE_NOTE_LIMIT;
 
 	return (
 		<div className="space-y-6 max-w-2xl">
@@ -74,12 +103,37 @@ export default function NotesPage({
 				<button
 					type="button"
 					onClick={() => setShowForm(!showForm)}
-					className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+					disabled={atLimit}
+					className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
 				>
 					<Plus className="h-4 w-4" />
 					New note
 				</button>
 			</div>
+
+			{/* Free tier limit banner */}
+			{!isPro && (
+				<div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+					<p className="text-sm text-amber-800 dark:text-amber-200">
+						Free plan — {noteCount}/{FREE_NOTE_LIMIT} notes used.{" "}
+						{atLimit && (
+							<a
+								href="/app/settings"
+								className="font-medium underline hover:no-underline"
+							>
+								Upgrade to Pro
+							</a>
+						)}
+					</p>
+				</div>
+			)}
+
+			{/* Action error (e.g. limit reached) */}
+			{actionData?.error && (
+				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+					<p className="text-sm text-destructive">{actionData.error}</p>
+				</div>
+			)}
 
 			{/* Create form */}
 			{showForm && (

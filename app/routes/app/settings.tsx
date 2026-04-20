@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { Camera, Loader2, Trash2, User } from "lucide-react";
+import { Camera, CreditCard, Loader2, Trash2, User } from "lucide-react";
 import { useRef, useState } from "react";
-import { useRevalidator } from "react-router";
+import { useRevalidator, useSearchParams } from "react-router";
 import { users } from "~/db/schema";
 import { auth } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
@@ -16,8 +16,16 @@ export async function loader({
 		db.select().from(users).where(eq(users.id, sessionUser.id)),
 		auth.api.listSessions({ headers: request.headers }),
 	]);
-	const { id, name, email, image } = dbUsers[0] ?? sessionUser;
-	const user = { id, name, email, image };
+	const { id, name, email, image, isPro, stripeCustomerId } =
+		dbUsers[0] ?? sessionUser;
+	const user = {
+		id,
+		name,
+		email,
+		image,
+		isPro: isPro ?? false,
+		stripeCustomerId: stripeCustomerId ?? null,
+	};
 	return { user, sessions };
 }
 
@@ -40,11 +48,21 @@ export default function SettingsPage({
 	loaderData,
 }: {
 	loaderData: {
-		user: { id: string; name: string; email: string; image: string | null };
+		user: {
+			id: string;
+			name: string;
+			email: string;
+			image: string | null;
+			isPro: boolean;
+			stripeCustomerId: string | null;
+		};
 		sessions: Session[];
 	};
 }) {
 	const { user, sessions } = loaderData;
+	const [searchParams] = useSearchParams();
+	const showSuccess = searchParams.get("success") === "true";
+	const showCancelled = searchParams.get("cancelled") === "true";
 
 	return (
 		<div className="space-y-8 max-w-2xl">
@@ -52,6 +70,28 @@ export default function SettingsPage({
 				<h1 className="text-2xl font-bold">Settings</h1>
 				<p className="text-muted-foreground">Manage your account.</p>
 			</div>
+
+			{/* Stripe checkout result banners */}
+			{showSuccess && (
+				<div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950">
+					<p className="text-sm text-green-800 dark:text-green-200">
+						🎉 You're now on the Pro plan! Enjoy unlimited notes.
+					</p>
+				</div>
+			)}
+			{showCancelled && (
+				<div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+					<p className="text-sm text-amber-800 dark:text-amber-200">
+						Checkout was cancelled. You can upgrade anytime.
+					</p>
+				</div>
+			)}
+
+			{/* Billing */}
+			<section className="space-y-4">
+				<h2 className="text-lg font-semibold">Billing</h2>
+				<BillingCard isPro={user.isPro} hasCustomer={!!user.stripeCustomerId} />
+			</section>
 
 			{/* Profile photo */}
 			<section className="space-y-4">
@@ -246,6 +286,101 @@ function PhotoUpload({ image, name }: { image: string | null; name: string }) {
 
 			{error && (
 				<p className="mt-3 text-sm text-destructive" role="alert">
+					{error}
+				</p>
+			)}
+		</div>
+	);
+}
+
+function BillingCard({
+	isPro,
+	hasCustomer,
+}: { isPro: boolean; hasCustomer: boolean }) {
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	async function handleCheckout() {
+		setError(null);
+		setLoading(true);
+		try {
+			const res = await fetch("/api/stripe/checkout", { method: "POST" });
+			const data = await res.json();
+			if (!res.ok) {
+				setError(data.error || "Something went wrong");
+				return;
+			}
+			if (data.url) {
+				window.location.href = data.url;
+			}
+		} catch {
+			setError("Failed to start checkout. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function handlePortal() {
+		setError(null);
+		setLoading(true);
+		try {
+			const res = await fetch("/api/stripe/portal", { method: "POST" });
+			const data = await res.json();
+			if (!res.ok) {
+				setError(data.error || "Something went wrong");
+				return;
+			}
+			if (data.url) {
+				window.location.href = data.url;
+			}
+		} catch {
+			setError("Failed to open billing portal. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	return (
+		<div className="rounded-lg border bg-card p-4 space-y-3">
+			{isPro ? (
+				<>
+					<div className="flex items-center gap-2">
+						<CreditCard className="h-4 w-4 text-green-600" />
+						<span className="text-sm font-medium">
+							Pro plan — unlimited notes
+						</span>
+					</div>
+					{hasCustomer && (
+						<button
+							type="button"
+							onClick={handlePortal}
+							disabled={loading}
+							className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+						>
+							{loading && <Loader2 className="h-3 w-3 animate-spin" />}
+							Manage billing
+						</button>
+					)}
+				</>
+			) : (
+				<>
+					<div className="flex items-center gap-2">
+						<CreditCard className="h-4 w-4 text-muted-foreground" />
+						<span className="text-sm font-medium">Free plan — 3 notes max</span>
+					</div>
+					<button
+						type="button"
+						onClick={handleCheckout}
+						disabled={loading}
+						className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+					>
+						{loading && <Loader2 className="h-3 w-3 animate-spin" />}
+						Upgrade to Pro — €9/month
+					</button>
+				</>
+			)}
+			{error && (
+				<p className="text-sm text-destructive" role="alert">
 					{error}
 				</p>
 			)}

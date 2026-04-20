@@ -8,6 +8,8 @@ const mockUser = {
 	name: "Jane Doe",
 	email: "jane@test.com",
 	image: null,
+	isPro: false,
+	stripeCustomerId: null,
 };
 
 const mockSessions = [
