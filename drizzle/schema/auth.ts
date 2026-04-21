@@ -15,6 +15,12 @@ export const users = sqliteTable("users", {
 	isPro: integer("is_pro", { mode: "boolean" }).notNull().default(false),
 	stripeCustomerId: text("stripe_customer_id"),
 	stripeSubscriptionId: text("stripe_subscription_id"),
+	stripePeriodEnd: integer("stripe_period_end", { mode: "timestamp" }),
+	stripeCancelAtPeriodEnd: integer("stripe_cancel_at_period_end", {
+		mode: "boolean",
+	})
+		.notNull()
+		.default(false),
 	createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 	updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
