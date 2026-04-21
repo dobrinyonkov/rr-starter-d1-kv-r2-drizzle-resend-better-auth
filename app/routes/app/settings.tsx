@@ -16,8 +16,16 @@ export async function loader({
 		db.select().from(users).where(eq(users.id, sessionUser.id)),
 		auth.api.listSessions({ headers: request.headers }),
 	]);
-	const { id, name, email, image, isPro, stripeCustomerId } =
-		dbUsers[0] ?? sessionUser;
+	const {
+		id,
+		name,
+		email,
+		image,
+		isPro,
+		stripeCustomerId,
+		stripePeriodEnd,
+		stripeCancelAtPeriodEnd,
+	} = dbUsers[0] ?? sessionUser;
 	const user = {
 		id,
 		name,
@@ -25,6 +33,8 @@ export async function loader({
 		image,
 		isPro: isPro ?? false,
 		stripeCustomerId: stripeCustomerId ?? null,
+		stripePeriodEnd: stripePeriodEnd?.toISOString() ?? null,
+		stripeCancelAtPeriodEnd: stripeCancelAtPeriodEnd ?? false,
 	};
 	return { user, sessions };
 }
@@ -55,6 +65,8 @@ export default function SettingsPage({
 			image: string | null;
 			isPro: boolean;
 			stripeCustomerId: string | null;
+			stripePeriodEnd: string | null;
+			stripeCancelAtPeriodEnd: boolean;
 		};
 		sessions: Session[];
 	};
@@ -90,7 +102,12 @@ export default function SettingsPage({
 			{/* Billing */}
 			<section className="space-y-4">
 				<h2 className="text-lg font-semibold">Billing</h2>
-				<BillingCard isPro={user.isPro} hasCustomer={!!user.stripeCustomerId} />
+				<BillingCard
+					isPro={user.isPro}
+					hasCustomer={!!user.stripeCustomerId}
+					stripePeriodEnd={user.stripePeriodEnd}
+					stripeCancelAtPeriodEnd={user.stripeCancelAtPeriodEnd}
+				/>
 			</section>
 
 			{/* Profile photo */}
@@ -296,7 +313,14 @@ function PhotoUpload({ image, name }: { image: string | null; name: string }) {
 function BillingCard({
 	isPro,
 	hasCustomer,
-}: { isPro: boolean; hasCustomer: boolean }) {
+	stripePeriodEnd,
+	stripeCancelAtPeriodEnd,
+}: {
+	isPro: boolean;
+	hasCustomer: boolean;
+	stripePeriodEnd: string | null;
+	stripeCancelAtPeriodEnd: boolean;
+}) {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -340,16 +364,33 @@ function BillingCard({
 		}
 	}
 
+	const formattedDate = stripePeriodEnd
+		? new Date(stripePeriodEnd).toLocaleDateString(undefined, {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+			})
+		: null;
+
 	return (
 		<div className="rounded-lg border bg-card p-4 space-y-3">
 			{isPro ? (
 				<>
 					<div className="flex items-center gap-2">
-						<CreditCard className="h-4 w-4 text-green-600" />
+						<CreditCard
+							className={`h-4 w-4 ${stripeCancelAtPeriodEnd && formattedDate ? "text-amber-500" : "text-green-600"}`}
+						/>
 						<span className="text-sm font-medium">
-							Pro plan — unlimited notes
+							{stripeCancelAtPeriodEnd && formattedDate
+								? `Pro plan — active until ${formattedDate}`
+								: "Pro plan — unlimited notes"}
 						</span>
 					</div>
+					{!stripeCancelAtPeriodEnd && formattedDate && (
+						<p className="text-xs text-muted-foreground">
+							Next billing date: {formattedDate}
+						</p>
+					)}
 					{hasCustomer && (
 						<button
 							type="button"

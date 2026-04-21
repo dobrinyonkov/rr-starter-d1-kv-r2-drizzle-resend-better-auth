@@ -10,6 +10,8 @@ const mockUser = {
 	image: null,
 	isPro: false,
 	stripeCustomerId: null,
+	stripePeriodEnd: null,
+	stripeCancelAtPeriodEnd: false,
 };
 
 const mockSessions = [
@@ -135,5 +137,37 @@ describe("Settings page", () => {
 		const img = screen.getByAltText("Profile avatar") as HTMLImageElement;
 		expect(img).toBeInTheDocument();
 		expect(img.src).toBe("https://example.com/photo.jpg");
+	});
+
+	// Billing tests
+	it("shows next billing date for active pro user", async () => {
+		renderSettings({
+			...mockUser,
+			isPro: true,
+			stripeCustomerId: "cus_test",
+			stripePeriodEnd: "2026-05-21T00:00:00.000Z",
+			stripeCancelAtPeriodEnd: false,
+		});
+		expect(await screen.findByText(/Next billing date/)).toBeInTheDocument();
+		expect(screen.getByText(/May 21, 2026/)).toBeInTheDocument();
+	});
+
+	it("shows active until date when subscription is cancelling", async () => {
+		renderSettings({
+			...mockUser,
+			isPro: true,
+			stripeCustomerId: "cus_test",
+			stripePeriodEnd: "2026-05-21T00:00:00.000Z",
+			stripeCancelAtPeriodEnd: true,
+		});
+		expect(await screen.findByText(/active until/)).toBeInTheDocument();
+	});
+
+	it("shows upgrade button for free users", async () => {
+		renderSettings();
+		expect(
+			await screen.findByText(/Upgrade to Pro/),
+		).toBeInTheDocument();
+		expect(screen.getByText(/Free plan/)).toBeInTheDocument();
 	});
 });

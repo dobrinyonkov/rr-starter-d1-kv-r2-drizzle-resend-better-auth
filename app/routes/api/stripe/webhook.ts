@@ -39,8 +39,12 @@ export async function action({ request }: { request: Request }) {
 		id: string;
 		status: string;
 		customer: string;
+		cancel_at_period_end: boolean;
+		items?: { data?: Array<{ current_period_end?: number }> };
 		metadata?: { userId?: string };
 	};
+
+	const currentPeriodEnd = subscription.items?.data?.[0]?.current_period_end;
 
 	const userId = subscription.metadata?.userId;
 	if (!userId) {
@@ -56,18 +60,35 @@ export async function action({ request }: { request: Request }) {
 					isPro: true,
 					stripeCustomerId: subscription.customer,
 					stripeSubscriptionId: subscription.id,
+					stripePeriodEnd: currentPeriodEnd
+						? new Date(currentPeriodEnd * 1000)
+						: null,
+					stripeCancelAtPeriodEnd: false,
 				})
 				.where(eq(users.id, userId));
 			break;
 
 		case "customer.subscription.deleted":
-			await db.update(users).set({ isPro: false }).where(eq(users.id, userId));
+			await db
+				.update(users)
+				.set({
+					isPro: false,
+					stripeCancelAtPeriodEnd: false,
+					stripePeriodEnd: null,
+				})
+				.where(eq(users.id, userId));
 			break;
 
 		case "customer.subscription.updated":
 			await db
 				.update(users)
-				.set({ isPro: subscription.status === "active" })
+				.set({
+					isPro: subscription.status === "active",
+					stripePeriodEnd: currentPeriodEnd
+						? new Date(currentPeriodEnd * 1000)
+						: null,
+					stripeCancelAtPeriodEnd: subscription.cancel_at_period_end,
+				})
 				.where(eq(users.id, userId));
 			break;
 
